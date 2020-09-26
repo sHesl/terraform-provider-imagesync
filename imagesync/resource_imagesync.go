@@ -131,7 +131,49 @@ func imagesyncDelete(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	return remote.Delete(destRef, destAuthOpt)
+	// Delete this tag. Perform this regardless of if other tags exist
+	if err := remote.Delete(destRef, destAuthOpt); err != nil {
+		return err
+	}
+
+	// Check through all available tags to see if there are any more images referencing these blobs
+	tags, err := remote.List(destRef.Context(), destAuthOpt)
+	if err != nil {
+		if strings.Contains(err.Error(), "METHOD_UNKNOWN") {
+			// If the registry doesn't support listing images, we can't be sure we can safely delete these blobs
+			return nil
+		}
+		return err
+	}
+
+	for _, t := range tags {
+		imgRef, err := name.ParseReference(destRef.Context().String()+":"+t, name.WeakValidation)
+		if err != nil {
+			return err
+		}
+
+		i, err := remote.Image(imgRef, destAuthOpt)
+		if err != nil {
+			return err
+		}
+
+		imageID, err := i.Digest()
+		if err != nil {
+			return err
+		}
+
+		if imageID.String() == digestFromReference(d.Id()) {
+			return nil // Another image is using the same layers as we are, do not delete these layers!
+		}
+	}
+
+	// No other tag references these layers, we're free to delete
+	idRef, err := name.ParseReference(d.Id(), name.WeakValidation)
+	if err != nil {
+		return err
+	}
+
+	return remote.Delete(idRef, destAuthOpt)
 }
 
 func authOption(ref name.Reference) (remote.Option, error) {
