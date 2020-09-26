@@ -52,3 +52,18 @@ func imageID(url string, img v1.Image) (string, error) {
 
 	return url + "@" + digest.String(), nil
 }
+
+// digestFromReference strips all content preceding the digest for the given, fully qualified, reference. If
+// no digest is present, the resulting string will be empty
+func digestFromReference(ref string) string {
+	at := strings.LastIndex(ref, "@")
+	if at == -1 {
+		return ""
+	}
+
+	if at+1 >= len(ref) {
+		return ""
+	}
+
+	return ref[at+1:]
+}
