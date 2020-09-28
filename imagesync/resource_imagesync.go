@@ -181,7 +181,7 @@ func authOption(ref name.Reference) (remote.Option, error) {
 	regIP := ipFromRegistry(reg.Name())
 
 	switch {
-	case registryIn(reg, "registry.hub.docker.com", "quay.io"):
+	case registryIn(reg, "registry.hub.docker.com", "quay.io", "ghcr.io"):
 		scopes := []string{ref.Scope(transport.PullScope)}
 		rt, err := transport.New(reg, &authn.Bearer{}, http.DefaultTransport, scopes)
 		if err != nil {
