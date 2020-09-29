@@ -42,6 +42,8 @@ func imagesync() *schema.Resource {
 				ForceNew: true,
 			},
 		},
+
+		CustomizeDiff: sourceChangedDiffFunc,
 	}
 }
 
@@ -95,26 +97,6 @@ func imagesyncRead(d *schema.ResourceData, meta interface{}) error {
 		}
 		d.SetId(imgID)
 	}
-
-	// Several things could have changed with the 'source', it could be that:
-	// - the user wants to use a different image
-	// - the source image in the registry has changed
-	// - the user wants the same image, but from a different registry
-	// If the first 2 are true, the digest will change, and so 'ForceNew' will be triggered,
-	// If the image digest remains the same, then the resource will not be marked for update
-	src := d.Get("source").(string)
-	srcImg, exists, err := getRemoteImage(src)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return fmt.Errorf("unable to locate source image at '%s'", src)
-	}
-	srcDigest, err := srcImg.Digest()
-	if err != nil {
-		return err
-	}
-	d.Set("source_digest", srcDigest.String())
 
 	return nil
 }
@@ -174,6 +156,35 @@ func imagesyncDelete(d *schema.ResourceData, m interface{}) error {
 	}
 
 	return remote.Delete(idRef, destAuthOpt)
+}
+
+func sourceChangedDiffFunc(d *schema.ResourceDiff, v interface{}) error {
+	// Several things could have changed with the 'source', it could be that:
+	// - the user wants to use a different image
+	// - the source image in the registry has changed
+	// - the user wants the same image, but from a different registry
+	// If the first 2 are true, the digest will change, and so 'ForceNew' will be triggered,
+	// If the image digest remains the same, then the resource will not be marked for update
+	src := d.Get("source").(string)
+	srcImg, exists, err := getRemoteImage(src)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("unable to locate source image at '%s'", src)
+	}
+	srcDigest, err := srcImg.Digest()
+	if err != nil {
+		return err
+	}
+
+	oldDigest := d.Get("source_digest").(string)
+	newDigest := srcDigest.String()
+	if oldDigest != newDigest {
+		d.SetNew("source_digest", newDigest)
+	}
+
+	return nil
 }
 
 func authOption(ref name.Reference) (remote.Option, error) {
