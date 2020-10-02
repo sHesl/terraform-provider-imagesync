@@ -1,5 +1,5 @@
 # terraform-provider-imagesync
-Sync container images across registries, while tracking changes to versions and tags all through Terraform state, allowing you to mirror images in your private registries, alongside the Terraform resources that use them.
+Sync container images across registries, allowing you to mirror images into private registries and track changes/pull updates of images through Terraform state.
 
 ```
 resource "imagesync" "busybox_1_32" {
