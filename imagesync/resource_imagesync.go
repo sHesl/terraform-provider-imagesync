@@ -208,7 +208,8 @@ func authOption(ref name.Reference) (remote.Option, error) {
 	case regIP != nil && regIP.IsLoopback():
 		return remote.WithAuth(authn.Anonymous), nil
 	default:
-		return nil, fmt.Errorf("unsupported registry %s", reg.Name())
+		// return nil, fmt.Errorf("unsupported registry %s", reg.Name())
+		return remote.WithAuth(authn.Anonymous), nil
 	}
 }
 
