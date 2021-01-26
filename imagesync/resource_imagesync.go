@@ -3,14 +3,12 @@ package imagesync
 import (
 	"fmt"
 	"net"
-	"net/http"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/google"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
@@ -189,26 +187,15 @@ func sourceChangedDiffFunc(d *schema.ResourceDiff, v interface{}) error {
 
 func authOption(ref name.Reference) (remote.Option, error) {
 	reg := ref.Context().Registry
-	regIP := ipFromRegistry(reg.Name())
 
 	switch {
-	case registryIn(reg, "registry.hub.docker.com", "quay.io", "ghcr.io"):
-		scopes := []string{ref.Scope(transport.PullScope)}
-		rt, err := transport.New(reg, &authn.Bearer{}, http.DefaultTransport, scopes)
-		if err != nil {
-			return nil, fmt.Errorf("resolve repository: %w", err)
-		}
-		return remote.WithTransport(rt), err
 	case registryIn(reg, "gcr.io", "eu.gcr.io", "us.gcr.io", "asia.gcr.io"):
 		googleAuth, err := google.NewEnvAuthenticator()
 		if err != nil {
 			return nil, err
 		}
 		return remote.WithAuth(googleAuth), nil
-	case regIP != nil && regIP.IsLoopback():
-		return remote.WithAuth(authn.Anonymous), nil
 	default:
-		// return nil, fmt.Errorf("unsupported registry %s", reg.Name())
 		return remote.WithAuth(authn.Anonymous), nil
 	}
 }
