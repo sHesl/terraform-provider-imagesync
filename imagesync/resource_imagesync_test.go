@@ -74,8 +74,8 @@ func TestImageSync(t *testing.T) {
 				Config:       stubImageSyncDockerhubConfig(destReg),
 				ResourceName: "imagesync.unit_test",
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("imagesync.unit_test", "id", destReg.URL[7:]+"/busybox@sha256:2ca5e69e244d2da7368f7088ea3ad0653c3ce7aaccd0b8823d11b0d5de956002"),
-					resource.TestCheckResourceAttr("imagesync.unit_test", "source_digest", "sha256:2ca5e69e244d2da7368f7088ea3ad0653c3ce7aaccd0b8823d11b0d5de956002"),
+					resource.TestCheckResourceAttr("imagesync.unit_test", "id", destReg.URL[7:]+"/busybox@sha256:0415f56ccc05526f2af5a7ae8654baec97d4a614f24736e8eef41a4591f08019"),
+					resource.TestCheckResourceAttr("imagesync.unit_test", "source_digest", "sha256:0415f56ccc05526f2af5a7ae8654baec97d4a614f24736e8eef41a4591f08019"),
 					resource.TestCheckResourceAttr("imagesync.unit_test", "source", "registry.hub.docker.com/library/busybox:1.32"),
 				),
 			},

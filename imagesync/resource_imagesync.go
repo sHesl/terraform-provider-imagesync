@@ -189,7 +189,6 @@ func sourceChangedDiffFunc(d *schema.ResourceDiff, v interface{}) error {
 
 func authOption(ref name.Reference) (remote.Option, error) {
 	reg := ref.Context().Registry
-	regIP := ipFromRegistry(reg.Name())
 
 	switch {
 	case registryIn(reg, "registry.hub.docker.com", "quay.io", "ghcr.io"):
@@ -205,10 +204,8 @@ func authOption(ref name.Reference) (remote.Option, error) {
 			return nil, err
 		}
 		return remote.WithAuth(googleAuth), nil
-	case regIP != nil && regIP.IsLoopback():
-		return remote.WithAuth(authn.Anonymous), nil
 	default:
-		return nil, fmt.Errorf("unsupported registry %s", reg.Name())
+		return remote.WithAuth(authn.Anonymous), nil
 	}
 }
 
