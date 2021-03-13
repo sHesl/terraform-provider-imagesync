@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/sHesl/terraform-provider-imagesync/imagesync"
+
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/registry" // Modified to allow registry deletes
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -12,7 +14,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/sHesl/terraform-provider-imagesync/imagesync"
 )
 
 func TestImageSync(t *testing.T) {
@@ -35,9 +36,23 @@ func TestImageSync(t *testing.T) {
 	}
 
 	stubImageSyncDockerhubConfig := func(destReg *httptest.Server) string {
-		return fmt.Sprintf(`resource "imagesync" "unit_test" {
+		return fmt.Sprintf(`resource "imagesync" "docker_unit_test" {
 			source      = "registry.hub.docker.com/library/busybox:1.32"
 			destination = "%s/busybox:1.32"
+		}`, destReg.URL[7:])
+	}
+
+	stubImageSyncQuayConfig := func(destReg *httptest.Server) string {
+		return fmt.Sprintf(`resource "imagesync" "quay_unit_test" {
+			source      = "quay.io/coreos/prometheus-config-reloader:v0.38.1"
+			destination = "%s/prometheus-config-reloader:v0.38.1"
+		}`, destReg.URL[7:])
+	}
+
+	stubImageSyncElasticConfig := func(destReg *httptest.Server) string {
+		return fmt.Sprintf(`resource "imagesync" "elastic_unit_test" {
+			source      = "docker.elastic.co/eck/eck-operator:1.0.1"
+			destination = "%s/eck-operator:1.0.1"
 		}`, destReg.URL[7:])
 	}
 
@@ -72,11 +87,33 @@ func TestImageSync(t *testing.T) {
 			{
 				// Test we can pull public dockerhub images
 				Config:       stubImageSyncDockerhubConfig(destReg),
-				ResourceName: "imagesync.unit_test",
+				ResourceName: "imagesync.docker_unit_test",
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("imagesync.unit_test", "id", destReg.URL[7:]+"/busybox@sha256:0415f56ccc05526f2af5a7ae8654baec97d4a614f24736e8eef41a4591f08019"),
-					resource.TestCheckResourceAttr("imagesync.unit_test", "source_digest", "sha256:0415f56ccc05526f2af5a7ae8654baec97d4a614f24736e8eef41a4591f08019"),
-					resource.TestCheckResourceAttr("imagesync.unit_test", "source", "registry.hub.docker.com/library/busybox:1.32"),
+					resource.TestCheckResourceAttrSet("imagesync.docker_unit_test", "id"),
+					resource.TestCheckResourceAttrSet("imagesync.docker_unit_test", "source_digest"),
+					resource.TestCheckResourceAttr("imagesync.docker_unit_test", "source", "registry.hub.docker.com/library/busybox:1.32"),
+				),
+			},
+
+			{
+				// Test we can pull public quay.io images
+				Config:       stubImageSyncQuayConfig(destReg),
+				ResourceName: "imagesync.quay_unit_test",
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("imagesync.quay_unit_test", "id"),
+					resource.TestCheckResourceAttrSet("imagesync.quay_unit_test", "source_digest"),
+					resource.TestCheckResourceAttr("imagesync.quay_unit_test", "source", "quay.io/coreos/prometheus-config-reloader:v0.38.1"),
+				),
+			},
+
+			{
+				// Test we can pull public elastic images
+				Config:       stubImageSyncElasticConfig(destReg),
+				ResourceName: "imagesync.elastic_unit_test",
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("imagesync.elastic_unit_test", "id"),
+					resource.TestCheckResourceAttrSet("imagesync.elastic_unit_test", "source_digest"),
+					resource.TestCheckResourceAttr("imagesync.elastic_unit_test", "source", "docker.elastic.co/eck/eck-operator:1.0.1"),
 				),
 			},
 		},
