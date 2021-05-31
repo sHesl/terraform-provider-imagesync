@@ -23,13 +23,15 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
+	"path/filepath"
 	"sync"
 
+	"github.com/google/go-containerregistry/internal/gzip"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/types"
-	"github.com/google/go-containerregistry/pkg/v1/v1util"
 )
 
 type image struct {
@@ -148,7 +150,7 @@ func (i *image) areLayersCompressed() (bool, error) {
 		return false, err
 	}
 	defer blob.Close()
-	return v1util.IsGzipped(blob)
+	return gzip.Is(blob)
 }
 
 func (i *image) loadTarDescriptorAndConfig() error {
@@ -199,6 +201,13 @@ func extractFileFromTar(opener Opener, filePath string) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
+	close := true
+	defer func() {
+		if close {
+			f.Close()
+		}
+	}()
+
 	tf := tar.NewReader(f)
 	for {
 		hdr, err := tf.Next()
@@ -209,6 +218,11 @@ func extractFileFromTar(opener Opener, filePath string) (io.ReadCloser, error) {
 			return nil, err
 		}
 		if hdr.Name == filePath {
+			if hdr.Typeflag == tar.TypeSymlink || hdr.Typeflag == tar.TypeLink {
+				currentDir := filepath.Dir(filePath)
+				return extractFileFromTar(opener, path.Join(currentDir, hdr.Linkname))
+			}
+			close = false
 			return tarFile{
 				Reader: tf,
 				Closer: f,
