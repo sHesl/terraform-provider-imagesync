@@ -1,6 +1,6 @@
 module github.com/sHesl/terraform-provider-imagesync
 
-go 1.14
+go 1.16
 
 require (
 	cloud.google.com/go/storage v1.8.0 // indirect
