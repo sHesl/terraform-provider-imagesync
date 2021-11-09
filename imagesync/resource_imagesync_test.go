@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sHesl/terraform-provider-imagesync/imagesync"
+	"github.com/ravelin-community/terraform-provider-imagesync/imagesync"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/registry" // Modified to allow registry deletes

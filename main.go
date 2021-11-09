@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/hashicorp/terraform/plugin"
-	"github.com/sHesl/terraform-provider-imagesync/imagesync"
+	"github.com/ravelin-community/terraform-provider-imagesync/imagesync"
 )
 
 func main() {
